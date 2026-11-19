@@ -254,9 +254,11 @@ select:focus-visible,
 }
 
 .button-cta {
-  display: inline-flex;
+  display: flex;
+  grid-column: 1 / -1;
   align-items: center;
-  justify-self: start;
+  justify-content: center;
+  width: 100%;
   gap: 0.65rem;
   padding: 0.85rem 1.3rem;
   border: 1px solid var(--cta);
