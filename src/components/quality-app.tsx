@@ -35,6 +35,8 @@ export function QualityApp() {
   const [result, setResult] = useState<Assessment | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [busy, setBusy] = useState<"read" | "calc" | "list" | null>("list")
+  const [scrollToken, setScrollToken] = useState(0)
+  const outcomeRef = useRef<HTMLElement>(null)
   const acceptRef = useRef<(file: File) => void>(() => {})
   const text = messages(lang)
 
@@ -47,6 +49,12 @@ export function QualityApp() {
       .catch((reason: unknown) => setMessage(errorText(reason, messages(initial))))
       .finally(() => setBusy(null))
   }, [])
+
+  useEffect(() => {
+    if (busy !== null || scrollToken === 0) return
+    const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"
+    outcomeRef.current?.scrollIntoView({ behavior, block: "start" })
+  }, [busy, scrollToken])
 
   useEffect(() => {
     function onPaste(event: ClipboardEvent) {
@@ -81,6 +89,7 @@ export function QualityApp() {
       await resolveRead(read, nextLang, items)
     } catch (reason) {
       setMessage(errorText(reason, text))
+      setScrollToken((token) => token + 1)
     } finally {
       setBusy((current) => (current === "read" ? null : current))
     }
@@ -111,6 +120,7 @@ export function QualityApp() {
     setQuery(read.name)
     setSelectedUrl("")
     setMessage(found.candidates.length > 0 ? messages(active).severalItems : messages(active).pickItem)
+    setScrollToken((token) => token + 1)
   }
 
   async function calculate() {
@@ -126,6 +136,7 @@ export function QualityApp() {
       await solve(selectedUrl, statsFromFields(fields), Number(level), forge, false, active)
     } catch (reason) {
       setMessage(errorText(reason, active))
+      setScrollToken((token) => token + 1)
     } finally {
       setBusy((current) => (current === "calc" ? null : current))
     }
@@ -169,11 +180,13 @@ export function QualityApp() {
     if (!next) {
       setResult(null)
       setMessage(active.noScaling)
+      setScrollToken((token) => token + 1)
       return
     }
     setLevelAssumed(assumed && itemForge === "none")
     setResult(next)
     setMessage(null)
+    setScrollToken((token) => token + 1)
   }
 
   function chooseLang(next: Lang) {
@@ -302,10 +315,12 @@ export function QualityApp() {
           {busy === "calc" ? text.calculating : text.calculate}
         </button>
       </form>
-      {message ? <p className="warn">{message}</p> : null}
-      {result && item ? (
-        <ResultPanel result={result} item={item} levelAssumed={levelAssumed} text={text} />
-      ) : null}
+      <section ref={outcomeRef} className="outcome">
+        {message ? <p className="warn">{message}</p> : null}
+        {result && item ? (
+          <ResultPanel result={result} item={item} levelAssumed={levelAssumed} text={text} />
+        ) : null}
+      </section>
     </main>
     </>
   )

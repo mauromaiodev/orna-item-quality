@@ -327,10 +327,19 @@ button:disabled {
   color: var(--warn);
 }
 
+.outcome {
+  scroll-margin-top: 5.5rem;
+}
+
+.outcome:empty {
+  display: none;
+}
+
 .result {
   margin-top: 2rem;
   padding-top: 1.75rem;
   border-top: 1px solid var(--line);
+  scroll-margin-top: 5.5rem;
 }
 
 .headline {
