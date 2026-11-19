@@ -1,5 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
+import { cleanItemName } from "./item-name"
+import { matchCatalog } from "./match-item"
 import { assess, dexterityAt, resolveLevel, upgradedStat } from "./quality"
 
 const ballistaBase = {
@@ -88,6 +90,43 @@ test("a curva normal não é confundida com a de boss no nível 10", () => {
   assert.equal(result?.quality, 170)
   assert.equal(result?.boss, false)
   assert.equal(result?.tier, "ornate")
+})
+
+test("a túnica encantada usa só magia e resistência, no nível 1", () => {
+  const result = assess({
+    shown: {
+      attack: 0,
+      magic: 342,
+      mana: 0,
+      defense: 0,
+      resistance: 247,
+      dexterity: 0,
+      ward: 0,
+      crit: 0,
+    },
+    base: { magic: 180, resistance: 130 },
+    level: 1,
+    forge: "none",
+    upgradable: true,
+  })
+  assert.equal(result?.quality, 190)
+  assert.equal(result?.tier, "ornate")
+  assert.deepEqual(
+    result?.lines.map((line) => line.key),
+    ["magic", "resistance"],
+  )
+})
+
+test("o nome encantado encontra a ficha base", () => {
+  const items = [
+    { name: "Heretic's Jewel", url: "/codex/items/heretics-jewel/" },
+    { name: "Heretic's Robe", url: "/codex/items/heretics-robe/" },
+    { name: "Holy Sword", url: "/codex/items/holy-sword/" },
+  ]
+  assert.equal(matchCatalog("Infernal Heretic's Robe", items)?.name, "Heretic's Robe")
+  assert.equal(matchCatalog("Anguished Heretic's Robe", items)?.name, "Heretic's Robe")
+  assert.equal(matchCatalog("Holy Sword", items)?.name, "Holy Sword")
+  assert.equal(cleanItemName("Túnica do Herege Infernal Ornado"), "Túnica do Herege Infernal")
 })
 
 test("destreza no nível 10 não usa a qualidade", () => {

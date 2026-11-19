@@ -185,17 +185,24 @@ function scoreCurve(input: {
   level: number
   keys: StatKey[]
 }): CurveScore {
-  const primary = primaryKey(input.keys, input.shown)
+  const keys = input.keys.filter((key) => hasReference(input.base[key] ?? 0, input.level, input.boss))
+  if (keys.length === 0) return { boss: input.boss, quality: 0, matches: -1, error: Number.POSITIVE_INFINITY }
+  const primary = primaryKey(keys, input.shown)
   const quality = itemQuality({
     shown: input.shown[primary] ?? 0,
     base: input.base[primary] ?? 0,
     level: input.level,
     boss: input.boss,
   })
-  return input.keys.reduce<CurveScore>(
+  return keys.reduce<CurveScore>(
     (score, key) => addStatError(score, input, quality, key),
     { boss: input.boss, quality, matches: 0, error: 0 },
   )
+}
+
+function hasReference(base: number, level: number, boss: boolean): boolean {
+  const reference = upgradedStat({ base, level, quality: 100, boss })
+  return reference !== 0 && Number.isFinite(reference)
 }
 
 function addStatError(
@@ -331,6 +338,7 @@ export function assess(input: {
   if (keys.length === 0) return null
   const normal = scoreCurve({ ...input, boss: false, level, keys })
   const boss = scoreCurve({ ...input, boss: true, level, keys })
+  if (normal.matches < 0 && boss.matches < 0) return null
   const chosen = chooseCurve(normal, boss, input.preferBoss ?? false)
   return {
     quality: chosen.quality,

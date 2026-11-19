@@ -271,17 +271,17 @@ function readStat(value: unknown): number | null {
 
 const PROMPT = `Leia o print de um item do jogo Orna. Responda só JSON:
 {
-  "name": "nome base do item, sem palavra de qualidade ou forja",
-  "level": 1,
+  "name": "Heretic's Robe",
+  "level": null,
   "forge": "none",
   "language": "pt",
   "stats": {
     "attack": null,
-    "magic": null,
+    "magic": 342,
     "mana": null,
     "hp": null,
     "defense": null,
-    "resistance": null,
+    "resistance": 247,
     "dexterity": null,
     "ward": null,
     "crit": null,
@@ -289,11 +289,13 @@ const PROMPT = `Leia o print de um item do jogo Orna. Responda só JSON:
   }
 }
 Regras:
-- language é "pt" se a interface do print estiver em português (Atq, Guarda, Ornado, Destreza, Nível) e "en" se estiver em inglês (Atk, Ward, Ornate, Dexterity, Level). Se não der para saber, null.
-- Use somente a primeira linha de status, a branca. Ignore a linha colorida de Anguish.
-- Ignore números entre parênteses, como (+70). Eles comparam com o item equipado.
-- Anguished N não é o nível do item. level é o nível do item de 1 a 10, ou null se não aparecer.
+- name é o nome em inglês do Codex, sem qualidade, sem forja, sem Anguish e sem o elemento do encantamento. "Túnica do Herege Infernal Ornado" é "Heretic's Robe". "Infernal", "Fogo" e os outros elementos não fazem parte do nome.
+- language é "pt" se a interface estiver em português e "en" se estiver em inglês. Se não der para saber, null.
+- Cada item tem um conjunto diferente de status. Preencha só os que aparecem na linha branca do próprio item. O que não aparecer fica null. Não transforme ausência em 0.
+- Use somente a linha branca. Se existir uma segunda linha colorida, ela é Anguish, mesmo que o item já tenha vindo angustiado. Ignore essa linha.
+- Ignore números entre parênteses, como (+633) ou (-373). Eles comparam com o item equipado.
+- TIER, estrela e ★ são a raridade do item, não o nível de forja. level é o nível de aprimoramento de 1 a 10, ou null se a tela não mostrar Nível/Level.
 - Guarda, Ward e Crítico são a porcentagem inteira (4, não 0.04).
-- Mapeie Atq/Ataque/Atk/Attack=attack, Mag/Magia/Magic=magic, Mana=mana, Des/Destreza/Dex/Dexterity=dexterity, Def/Defesa/Defense=defense, Res/Resistência/Resistance=resistance, HP/Vida=hp, Guarda/Ward=ward, Crítico/Crit=crit.
-- forge: master para Masterforged/Masterforjado, demon para Demonforged/Demonforjado, god para Godforged/Godforjado, senão none.
-- Tire do nome: Ornado, Ornate, Lendário, Legendary, Famoso, Famed, Superior, Comum, Common, Ruim, Poor, Quebrado, Broken e as palavras de forja.`
+- Mapeie Atq/Ataque/Atk/Attack=attack, Mag/Magia/Magic=magic, Mana=mana, Des/Destreza/Dex/Dexterity=dexterity, Def/Defesa/Defense=defense, Res/Resistência/Resistance=resistance, HP/Vida=hp, Guarda/Ward=ward, Crítico/Crit=crit, Antevisão/Foresight=foresight.
+- Ignore redução de mana, dano elemental, adorno, materiais e qualquer outro texto que não seja um desses status.
+- forge: master, demon, god, ou none.`
