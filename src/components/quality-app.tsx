@@ -41,8 +41,11 @@ export function QualityApp() {
   const [scrollToken, setScrollToken] = useState(0)
   const [saved, setSaved] = useState<SavedLookup[]>([])
   const [copied, setCopied] = useState(false)
+  const [showTop, setShowTop] = useState(false)
   const savedRef = useRef<SavedLookup[]>([])
   const outcomeRef = useRef<HTMLElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
+  const scrollStop = useRef<() => void>(() => {})
   const acceptRef = useRef<(file: File) => void>(() => {})
   const text = messages(lang)
 
@@ -65,15 +68,25 @@ export function QualityApp() {
     if (busy !== null || scrollToken === 0) return
     const element = outcomeRef.current
     if (!element) return
-    let stop = () => {}
     const frame = requestAnimationFrame(() => {
-      stop = scrollToResult(element)
+      scrollStop.current()
+      scrollStop.current = scrollToResult(element)
     })
     return () => {
       cancelAnimationFrame(frame)
-      stop()
+      scrollStop.current()
     }
   }, [busy, scrollToken])
+
+  useEffect(() => {
+    function onScroll() {
+      const next = window.scrollY > 320
+      setShowTop((current) => (current === next ? current : next))
+    }
+    onScroll()
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
 
   useEffect(() => {
     function onPaste(event: ClipboardEvent) {
@@ -290,6 +303,27 @@ export function QualityApp() {
     persistLang(next)
   }
 
+  function clearForm() {
+    setPreview(null)
+    setQuery("")
+    setSelectedUrl("")
+    setLevel("1")
+    setLevelAssumed(false)
+    setForge("none")
+    setFields(emptyFields())
+    setItem(null)
+    setResult(null)
+    setMessage(null)
+    setCopied(false)
+    if (fileRef.current) fileRef.current.value = ""
+    forgetShare()
+  }
+
+  function backToTop() {
+    scrollStop.current()
+    scrollStop.current = scrollLinear(0)
+  }
+
   function changeField(key: StatKey, value: string) {
     setFields((current) => ({ ...current, [key]: value }))
     setResult(null)
@@ -327,6 +361,7 @@ export function QualityApp() {
         }}
       >
         <input
+          ref={fileRef}
           type="file"
           accept="image/*"
           onChange={(event) => {
@@ -412,10 +447,15 @@ export function QualityApp() {
             </label>
           ))}
         </div>
-        <button className="button-cta" type="submit" disabled={busy !== null}>
-          {busy === "calc" ? <span className="spinner spinner-small" aria-hidden="true" /> : null}
-          {busy === "calc" ? text.calculating : text.calculate}
-        </button>
+        <div className="actions">
+          <button className="button-cta" type="submit" disabled={busy !== null}>
+            {busy === "calc" ? <span className="spinner spinner-small" aria-hidden="true" /> : null}
+            {busy === "calc" ? text.calculating : text.calculate}
+          </button>
+          <button className="button-quiet" type="button" onClick={clearForm} disabled={busy !== null}>
+            {text.clear}
+          </button>
+        </div>
       </form>
       <section ref={outcomeRef} className="outcome">
         {message ? <p className="warn">{message}</p> : null}
@@ -431,14 +471,17 @@ export function QualityApp() {
         ) : null}
       </section>
     </main>
+    {showTop ? (
+      <button className="to-top" type="button" onClick={backToTop}>
+        {text.backToTop}
+      </button>
+    ) : null}
     </>
   )
 }
 
-/** Desce em linha reta até o resultado ficar abaixo do menu, com o botão fora da tela. */
-function scrollToResult(element: HTMLElement): () => void {
-  const navHeight = document.querySelector(".nav")?.getBoundingClientRect().height ?? 0
-  const destination = Math.max(0, window.scrollY + element.getBoundingClientRect().top - navHeight)
+/** Desce ou sobe em linha reta até a posição pedida. */
+function scrollLinear(destination: number): () => void {
   const start = window.scrollY
   const distance = destination - start
   if (Math.abs(distance) < 2) return () => undefined
@@ -456,6 +499,13 @@ function scrollToResult(element: HTMLElement): () => void {
   }
   frame = requestAnimationFrame(step)
   return () => cancelAnimationFrame(frame)
+}
+
+/** Leva o resultado para baixo do menu, com o botão de calcular fora da tela. */
+function scrollToResult(element: HTMLElement): () => void {
+  const navHeight = document.querySelector(".nav")?.getBoundingClientRect().height ?? 0
+  const destination = Math.max(0, window.scrollY + element.getBoundingClientRect().top - navHeight)
+  return scrollLinear(destination)
 }
 
 function writeShareUrl(payload: SharePayload) {

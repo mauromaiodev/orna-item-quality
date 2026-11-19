@@ -288,20 +288,55 @@ select:focus-visible,
   gap: 0.5rem;
 }
 
-.button-cta {
-  display: flex;
+.actions {
   grid-column: 1 / -1;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.button-cta,
+.button-quiet {
+  display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
   gap: 0.65rem;
   padding: 0.85rem 1.3rem;
-  border: 1px solid var(--cta);
   border-radius: 2px;
-  background: var(--cta);
-  color: var(--text);
   font-size: 0.875rem;
   font-weight: 600;
+}
+
+.button-cta {
+  border: 1px solid var(--cta);
+  background: var(--cta);
+  color: var(--text);
+}
+
+.button-quiet {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+}
+
+.button-quiet:hover,
+.to-top:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.to-top {
+  position: fixed;
+  z-index: 6;
+  right: 4vw;
+  bottom: 1.5rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-display), Cinzel, serif;
+  font-size: 0.8rem;
 }
 
 .button-cta:hover {
