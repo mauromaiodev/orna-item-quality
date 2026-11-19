@@ -174,18 +174,40 @@ p {
   list-style: none;
 }
 
-.saved button {
+.saved li {
   display: flex;
-  gap: 0.75rem;
-  align-items: baseline;
-  padding: 0.45rem 0.7rem;
+  align-items: stretch;
+}
+
+.saved-open,
+.saved-remove {
   border: 1px solid var(--line);
-  border-radius: 3px;
   background: var(--field);
   font-size: 0.8rem;
 }
 
-.saved button span:last-child {
+.saved-open {
+  display: flex;
+  gap: 0.75rem;
+  align-items: baseline;
+  padding: 0.45rem 0.7rem;
+  border-radius: 3px 0 0 3px;
+}
+
+.saved-open span:last-child {
+  color: var(--gold);
+}
+
+.saved-remove {
+  padding: 0 0.7rem;
+  border-left: 0;
+  border-radius: 0 3px 3px 0;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.saved-remove:hover {
   color: var(--gold);
 }
 

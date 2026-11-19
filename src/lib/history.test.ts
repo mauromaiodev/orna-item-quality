@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { rememberLookup, type LookupDraft } from "./history"
+import { forgetLookup, rememberLookup, type LookupDraft } from "./history"
 
 const item = {
   name: "Wyrmquill Ballista",
@@ -41,6 +41,13 @@ test("a mesma conta substitui a anterior e outra conta fica na lista", () => {
   assert.equal(second.length, 2)
   assert.equal(second[0]?.shown.attack, 400)
   assert.equal(second[1]?.shown.attack, 543)
+})
+
+test("remover uma consulta deixa as outras", () => {
+  const saved = rememberLookup(rememberLookup([], draft(543), 1), draft(400), 2)
+  const left = forgetLookup(saved, saved[1]?.id ?? "")
+  assert.equal(left.length, 1)
+  assert.equal(left[0]?.shown.attack, 400)
 })
 
 test("a lista guarda no máximo vinte consultas", () => {

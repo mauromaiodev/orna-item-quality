@@ -17,6 +17,11 @@ export type SavedLookup = {
 
 export type LookupDraft = Omit<SavedLookup, "id" | "savedAt">
 
+/** Tira uma consulta da lista salva. */
+export function forgetLookup(current: SavedLookup[], id: string): SavedLookup[] {
+  return current.filter((entry) => entry.id !== id)
+}
+
 /** Guarda a consulta que deu resultado e substitui a mesma conta. */
 export function rememberLookup(current: SavedLookup[], draft: LookupDraft, savedAt = Date.now()): SavedLookup[] {
   const next = { ...draft, id: lookupId(draft), savedAt }

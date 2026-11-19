@@ -42,6 +42,7 @@ type Copy = {
   shareFailed: string
   clear: string
   backToTop: string
+  removeSaved: string
   compare: (name: string) => string
   headline: (quality: number, tier: string) => string
   ratio: (label: string, shown: number, reference: number, percent: number) => string
@@ -124,6 +125,7 @@ const copy: Record<Lang, Copy> = {
     shareFailed: "Não foi possível copiar. O link está na barra de endereço.",
     clear: "Limpar",
     backToTop: "Voltar ao topo",
+    removeSaved: "Remover consulta",
     compare: (name) =>
       `A porcentagem compara a linha branca com ${name} a 100% no mesmo nível. A linha de Anguish e os números entre parênteses ficam de fora.`,
     headline: (quality, tier) => `Esse item tem ${quality}% de qualidade ${tier}.`,
@@ -191,6 +193,7 @@ const copy: Record<Lang, Copy> = {
     shareFailed: "Could not copy. The link is in the address bar.",
     clear: "Clear",
     backToTop: "Back to top",
+    removeSaved: "Remove lookup",
     compare: (name) =>
       `The percent compares the white stats with ${name} at 100% on the same level. The Anguish line and the numbers in parentheses are left out.`,
     headline: (quality, tier) => `This item is ${quality}% ${tier} quality.`,

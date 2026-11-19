@@ -15,7 +15,14 @@ import {
   readImage,
   statsFromFields,
 } from "@/lib/form"
-import { readLookups, rememberLookup, writeLookups, type LookupDraft, type SavedLookup } from "@/lib/history"
+import {
+  forgetLookup,
+  readLookups,
+  rememberLookup,
+  writeLookups,
+  type LookupDraft,
+  type SavedLookup,
+} from "@/lib/history"
 import { isFresh, readShare, shareSearch, type SharePayload } from "@/lib/share"
 import { messages, persistLang, storedLang, translateError, type Messages } from "@/lib/i18n"
 import { matchCatalog } from "@/lib/match-item"
@@ -69,13 +76,9 @@ export function QualityApp() {
     const element = outcomeRef.current
     if (!element) return
     const frame = requestAnimationFrame(() => {
-      scrollStop.current()
       scrollStop.current = scrollToResult(element)
     })
-    return () => {
-      cancelAnimationFrame(frame)
-      scrollStop.current()
-    }
+    return () => cancelAnimationFrame(frame)
   }, [busy, scrollToken])
 
   useEffect(() => {
@@ -270,6 +273,13 @@ export function QualityApp() {
     }
   }
 
+  function removeSaved(id: string) {
+    const next = forgetLookup(savedRef.current, id)
+    savedRef.current = next
+    writeLookups(next)
+    setSaved(next)
+  }
+
   function storeLookup(draft: LookupDraft) {
     const next = rememberLookup(savedRef.current, draft)
     savedRef.current = next
@@ -320,7 +330,6 @@ export function QualityApp() {
   }
 
   function backToTop() {
-    scrollStop.current()
     scrollStop.current = scrollLinear(0)
   }
 
@@ -372,7 +381,7 @@ export function QualityApp() {
         {preview ? <img src={preview} alt={text.pasteAlt} /> : <span>{text.paste}</span>}
       </label>
       {busy ? <LoadingOverlay label={busyLabel(busy, text)} /> : null}
-      <SavedLookups items={saved} text={text} onOpen={openSaved} />
+      <SavedLookups items={saved} text={text} onOpen={openSaved} onRemove={removeSaved} />
       <form
         className="form"
         onSubmit={(event) => {
@@ -480,25 +489,41 @@ export function QualityApp() {
   )
 }
 
+let scrollRun = 0
+
 /** Desce ou sobe em linha reta até a posição pedida. */
 function scrollLinear(destination: number): () => void {
+  const run = ++scrollRun
+  const root = document.documentElement
+  const previous = root.style.scrollBehavior
+  root.style.scrollBehavior = "auto"
   const start = window.scrollY
   const distance = destination - start
-  if (Math.abs(distance) < 2) return () => undefined
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    window.scrollTo(0, destination)
+  const restore = () => {
+    if (run === scrollRun) root.style.scrollBehavior = previous
+  }
+  if (Math.abs(distance) < 2) {
+    restore()
     return () => undefined
   }
-  const duration = Math.min(1400, Math.max(900, Math.abs(distance) * 1.15))
-  const started = performance.now()
+  const duration = Math.min(1600, Math.max(1100, Math.abs(distance)))
+  let started = 0
   let frame = 0
   const step = (now: number) => {
+    if (run !== scrollRun) return
+    if (started === 0) started = now
     const progress = Math.min(1, (now - started) / duration)
-    window.scrollTo(0, start + distance * progress)
+    root.scrollTop = start + distance * progress
     if (progress < 1) frame = requestAnimationFrame(step)
+    else restore()
   }
   frame = requestAnimationFrame(step)
-  return () => cancelAnimationFrame(frame)
+  return () => {
+    if (run !== scrollRun) return
+    scrollRun += 1
+    cancelAnimationFrame(frame)
+    restore()
+  }
 }
 
 /** Leva o resultado para baixo do menu, com o botão de calcular fora da tela. */

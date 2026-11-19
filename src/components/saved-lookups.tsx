@@ -6,6 +6,7 @@ export function SavedLookups(props: {
   items: SavedLookup[]
   text: Messages
   onOpen: (item: SavedLookup) => void
+  onRemove: (id: string) => void
 }) {
   if (props.items.length === 0) return null
   return (
@@ -14,9 +15,17 @@ export function SavedLookups(props: {
       <ul>
         {props.items.map((entry) => (
           <li key={entry.id}>
-            <button type="button" onClick={() => props.onOpen(entry)}>
+            <button className="saved-open" type="button" onClick={() => props.onOpen(entry)}>
               <span>{entry.item.name}</span>
               <span>{summary(entry, props.text)}</span>
+            </button>
+            <button
+              className="saved-remove"
+              type="button"
+              aria-label={props.text.removeSaved}
+              onClick={() => props.onRemove(entry.id)}
+            >
+              ×
             </button>
           </li>
         ))}
