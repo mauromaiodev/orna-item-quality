@@ -52,8 +52,16 @@ export function QualityApp() {
 
   useEffect(() => {
     if (busy !== null || scrollToken === 0) return
-    const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"
-    outcomeRef.current?.scrollIntoView({ behavior, block: "start" })
+    const element = outcomeRef.current
+    if (!element) return
+    let stop = () => {}
+    const frame = requestAnimationFrame(() => {
+      stop = scrollToResult(element)
+    })
+    return () => {
+      cancelAnimationFrame(frame)
+      stop()
+    }
   }, [busy, scrollToken])
 
   useEffect(() => {
@@ -324,6 +332,29 @@ export function QualityApp() {
     </main>
     </>
   )
+}
+
+/** Desce em linha reta até o resultado ficar abaixo do menu, com o botão fora da tela. */
+function scrollToResult(element: HTMLElement): () => void {
+  const navHeight = document.querySelector(".nav")?.getBoundingClientRect().height ?? 0
+  const destination = Math.max(0, window.scrollY + element.getBoundingClientRect().top - navHeight)
+  const start = window.scrollY
+  const distance = destination - start
+  if (Math.abs(distance) < 2) return () => undefined
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    window.scrollTo(0, destination)
+    return () => undefined
+  }
+  const duration = Math.min(1400, Math.max(900, Math.abs(distance) * 1.15))
+  const started = performance.now()
+  let frame = 0
+  const step = (now: number) => {
+    const progress = Math.min(1, (now - started) / duration)
+    window.scrollTo(0, start + distance * progress)
+    if (progress < 1) frame = requestAnimationFrame(step)
+  }
+  frame = requestAnimationFrame(step)
+  return () => cancelAnimationFrame(frame)
 }
 
 function busyLabel(busy: "read" | "calc" | "list", text: Messages): string {
