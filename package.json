@@ -1,0 +1,21 @@
+{
+  "name": "orna-qualidade",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3010",
+    "build": "next build",
+    "test": "tsx --test src/lib/quality.test.ts"
+  },
+  "dependencies": {
+    "next": "^16.2.9",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0"
+  }
+}
