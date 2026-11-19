@@ -1,4 +1,5 @@
 import { cleanItemName } from "./item-name"
+import { isFresh } from "./share"
 import { statFromLabel } from "./stats"
 import type { CatalogItem, CodexCandidate, CodexItem, CodexResponse, StatMap } from "./types"
 
@@ -102,13 +103,18 @@ function toCandidates(cards: CodexCard[]): CodexCandidate[] {
   )
 }
 
+const itemCache = new Map<string, { at: number; item: CodexItem }>()
+
+/** Lê a ficha e reaproveita a cópia enquanto ela ainda está no prazo. */
 async function readItem(url: string, fallbackName: string): Promise<CodexItem | null> {
+  const cached = itemCache.get(url)
+  if (cached && isFresh(cached.at)) return cached.item
   const page = await fetchHtml(`${CODEX_ORIGIN}${url}`)
   const detail = readBootstrap(page)?.detail
   if (!detail?.facts) return null
   const stats = readStats(detail.facts)
   const place = readPlace(detail.facts)
-  return {
+  const item = {
     name: detail.name ?? fallbackName,
     url,
     place,
@@ -116,6 +122,8 @@ async function readItem(url: string, fallbackName: string): Promise<CodexItem | 
     bossLikely: usesBossCurve(detail),
     stats,
   }
+  itemCache.set(url, { at: Date.now(), item })
+  return item
 }
 
 function usesBossCurve(detail: CodexDetail): boolean {

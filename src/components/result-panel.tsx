@@ -9,6 +9,8 @@ export function ResultPanel(props: {
   item: CodexItem
   levelAssumed: boolean
   text: Messages
+  copied: boolean
+  onShare: () => void
 }) {
   const { result, item, levelAssumed, text } = props
   const tier = text.tier[result.tier]
@@ -39,10 +41,13 @@ export function ResultPanel(props: {
         {result.dexterity ? <li>{dexText(result.dexterity, text)}</li> : null}
       </ul>
       {result.projection.length > 0 ? <Projection result={result} text={text} /> : null}
-      <p className="note">
+      <p className="note share-row">
         <a href={`https://playorna.com${item.url}`} target="_blank" rel="noopener noreferrer">
           {text.codexLink}
         </a>
+        <button type="button" onClick={props.onShare}>
+          {props.copied ? text.copied : text.share}
+        </button>
       </p>
     </section>
   )

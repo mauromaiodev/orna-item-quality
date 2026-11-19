@@ -16,6 +16,7 @@ import {
   statsFromFields,
 } from "@/lib/form"
 import { readLookups, rememberLookup, writeLookups, type LookupDraft, type SavedLookup } from "@/lib/history"
+import { isFresh, readShare, shareSearch, type SharePayload } from "@/lib/share"
 import { messages, persistLang, storedLang, translateError, type Messages } from "@/lib/i18n"
 import { matchCatalog } from "@/lib/match-item"
 import { assess, type Assessment } from "@/lib/quality"
@@ -39,6 +40,7 @@ export function QualityApp() {
   const [busy, setBusy] = useState<"read" | "calc" | "list" | null>("list")
   const [scrollToken, setScrollToken] = useState(0)
   const [saved, setSaved] = useState<SavedLookup[]>([])
+  const [copied, setCopied] = useState(false)
   const savedRef = useRef<SavedLookup[]>([])
   const outcomeRef = useRef<HTMLElement>(null)
   const acceptRef = useRef<(file: File) => void>(() => {})
@@ -51,6 +53,8 @@ export function QualityApp() {
     setSaved(loaded)
     setLang(initial)
     persistLang(initial)
+    const shared = readShare(window.location.search)
+    if (shared) openShared(shared, messages(initial))
     void fetchCatalog()
       .then(setCatalog)
       .catch((reason: unknown) => setMessage(errorText(reason, messages(initial))))
@@ -182,6 +186,7 @@ export function QualityApp() {
     itemForge: Forge,
     assumed: boolean,
     active: Messages,
+    sharedAt?: number,
   ) {
     const next = assess({
       shown,
@@ -210,7 +215,46 @@ export function QualityApp() {
       levelAssumed: assumedLevel,
       result: next,
     })
+    writeShareUrl({
+      item: codex,
+      shown,
+      level: itemLevel,
+      forge: itemForge,
+      assumed: assumedLevel,
+      at: sharedAt ?? Date.now(),
+    })
     setScrollToken((token) => token + 1)
+  }
+
+  function openShared(payload: SharePayload, active: Messages) {
+    setQuery(payload.item.name)
+    setSelectedUrl(payload.item.url)
+    setLevel(String(payload.level))
+    setForge(payload.forge)
+    setFields(fieldsFromStats(payload.shown))
+    publish(payload.item, payload.shown, payload.level, payload.forge, payload.assumed, active, payload.at)
+    if (isFresh(payload.at)) return
+    void refreshShared(payload, active)
+  }
+
+  async function refreshShared(payload: SharePayload, active: Messages) {
+    try {
+      const found = await fetchCodexByUrl(payload.item.url)
+      if (!found.item) return
+      publish(found.item, payload.shown, payload.level, payload.forge, payload.assumed, active)
+    } catch {
+      return
+    }
+  }
+
+  async function copyShare() {
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 2000)
+    } catch {
+      setMessage(text.shareFailed)
+    }
   }
 
   function storeLookup(draft: LookupDraft) {
@@ -230,6 +274,14 @@ export function QualityApp() {
     setItem(entry.item)
     setResult(entry.result)
     setMessage(null)
+    writeShareUrl({
+      item: entry.item,
+      shown: entry.shown,
+      level: entry.level,
+      forge: entry.forge,
+      assumed: entry.levelAssumed,
+      at: entry.savedAt,
+    })
     setScrollToken((token) => token + 1)
   }
 
@@ -241,6 +293,7 @@ export function QualityApp() {
   function changeField(key: StatKey, value: string) {
     setFields((current) => ({ ...current, [key]: value }))
     setResult(null)
+    forgetShare()
   }
 
   const forged = forge !== "none"
@@ -304,11 +357,13 @@ export function QualityApp() {
               setQuery(value)
               setSelectedUrl("")
               setResult(null)
+              forgetShare()
             }}
             onPick={(picked) => {
               setQuery(picked.name)
               setSelectedUrl(picked.url)
               setResult(null)
+              forgetShare()
             }}
           />
         </label>
@@ -324,6 +379,7 @@ export function QualityApp() {
               setLevel(event.target.value)
               setLevelAssumed(false)
               setResult(null)
+              forgetShare()
             }}
           />
         </label>
@@ -335,6 +391,7 @@ export function QualityApp() {
             onChange={(event) => {
               setForge(event.target.value as Forge)
               setResult(null)
+              forgetShare()
             }}
           >
             <option value="none">{text.forgeNone}</option>
@@ -363,7 +420,14 @@ export function QualityApp() {
       <section ref={outcomeRef} className="outcome">
         {message ? <p className="warn">{message}</p> : null}
         {result && item ? (
-          <ResultPanel result={result} item={item} levelAssumed={levelAssumed} text={text} />
+          <ResultPanel
+            result={result}
+            item={item}
+            levelAssumed={levelAssumed}
+            text={text}
+            copied={copied}
+            onShare={() => void copyShare()}
+          />
         ) : null}
       </section>
     </main>
@@ -392,6 +456,17 @@ function scrollToResult(element: HTMLElement): () => void {
   }
   frame = requestAnimationFrame(step)
   return () => cancelAnimationFrame(frame)
+}
+
+function writeShareUrl(payload: SharePayload) {
+  const next = `${window.location.pathname}${shareSearch(payload)}`
+  if (`${window.location.pathname}${window.location.search}` === next) return
+  window.history.replaceState(null, "", next)
+}
+
+function forgetShare() {
+  if (!window.location.search.includes("s=")) return
+  window.history.replaceState(null, "", window.location.pathname)
 }
 
 function busyLabel(busy: "read" | "calc" | "list", text: Messages): string {

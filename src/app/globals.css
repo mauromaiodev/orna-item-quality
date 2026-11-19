@@ -360,6 +360,19 @@ button:disabled {
   font-size: 0.875rem;
 }
 
+.share-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  align-items: center;
+}
+
+.share-row a,
+.share-row button {
+  color: var(--gold);
+  font-size: 0.875rem;
+}
+
 .warn {
   color: var(--warn);
 }
