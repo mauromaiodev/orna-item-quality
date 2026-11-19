@@ -108,7 +108,7 @@ p {
 .page {
   width: min(87.5rem, 100%);
   margin: 0 auto;
-  padding: 3.5rem 4vw 100vh;
+  padding: 3.5rem 4vw 5rem;
 }
 
 .heading .eyebrow {
@@ -329,12 +329,12 @@ button:disabled {
   color: var(--warn);
 }
 
-.outcome {
-  scroll-margin-top: 5.5rem;
-}
-
 .outcome:empty {
   display: none;
+}
+
+.outcome:not(:empty) {
+  min-height: calc(100vh - 4.5rem);
 }
 
 .result {
