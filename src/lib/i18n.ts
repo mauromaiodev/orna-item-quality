@@ -36,6 +36,7 @@ type Copy = {
   projectionCaption: string
   statColumn: string
   codexLink: string
+  savedTitle: string
   compare: (name: string) => string
   headline: (quality: number, tier: string) => string
   ratio: (label: string, shown: number, reference: number, percent: number) => string
@@ -112,6 +113,7 @@ const copy: Record<Lang, Copy> = {
     projectionCaption: "Status desta qualidade no nível 10 e nas forjas",
     statColumn: "Status",
     codexLink: "Ficha no Codex",
+    savedTitle: "Consultas salvas",
     compare: (name) =>
       `A porcentagem compara a linha branca com ${name} a 100% no mesmo nível. A linha de Anguish e os números entre parênteses ficam de fora.`,
     headline: (quality, tier) => `Esse item tem ${quality}% de qualidade ${tier}.`,
@@ -173,6 +175,7 @@ const copy: Record<Lang, Copy> = {
     projectionCaption: "Stats for this quality at level 10 and at each forge",
     statColumn: "Stat",
     codexLink: "Codex entry",
+    savedTitle: "Saved lookups",
     compare: (name) =>
       `The percent compares the white stats with ${name} at 100% on the same level. The Anguish line and the numbers in parentheses are left out.`,
     headline: (quality, tier) => `This item is ${quality}% ${tier} quality.`,

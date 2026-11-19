@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { ItemSelect } from "@/components/item-select"
 import { LoadingOverlay } from "@/components/loading-overlay"
 import { ResultPanel } from "@/components/result-panel"
+import { SavedLookups } from "@/components/saved-lookups"
 import {
   emptyFields,
   fetchCatalog,
@@ -14,6 +15,7 @@ import {
   readImage,
   statsFromFields,
 } from "@/lib/form"
+import { readLookups, rememberLookup, writeLookups, type LookupDraft, type SavedLookup } from "@/lib/history"
 import { messages, persistLang, storedLang, translateError, type Messages } from "@/lib/i18n"
 import { matchCatalog } from "@/lib/match-item"
 import { assess, type Assessment } from "@/lib/quality"
@@ -36,12 +38,17 @@ export function QualityApp() {
   const [message, setMessage] = useState<string | null>(null)
   const [busy, setBusy] = useState<"read" | "calc" | "list" | null>("list")
   const [scrollToken, setScrollToken] = useState(0)
+  const [saved, setSaved] = useState<SavedLookup[]>([])
+  const savedRef = useRef<SavedLookup[]>([])
   const outcomeRef = useRef<HTMLElement>(null)
   const acceptRef = useRef<(file: File) => void>(() => {})
   const text = messages(lang)
 
   useEffect(() => {
     const initial = storedLang()
+    const loaded = readLookups()
+    savedRef.current = loaded
+    setSaved(loaded)
     setLang(initial)
     persistLang(initial)
     void fetchCatalog()
@@ -191,8 +198,37 @@ export function QualityApp() {
       setScrollToken((token) => token + 1)
       return
     }
-    setLevelAssumed(assumed && itemForge === "none")
+    const assumedLevel = assumed && itemForge === "none"
+    setLevelAssumed(assumedLevel)
     setResult(next)
+    setMessage(null)
+    storeLookup({
+      item: codex,
+      shown,
+      level: itemLevel,
+      forge: itemForge,
+      levelAssumed: assumedLevel,
+      result: next,
+    })
+    setScrollToken((token) => token + 1)
+  }
+
+  function storeLookup(draft: LookupDraft) {
+    const next = rememberLookup(savedRef.current, draft)
+    savedRef.current = next
+    writeLookups(next)
+    setSaved(next)
+  }
+
+  function openSaved(entry: SavedLookup) {
+    setQuery(entry.item.name)
+    setSelectedUrl(entry.item.url)
+    setLevel(String(entry.level))
+    setForge(entry.forge)
+    setLevelAssumed(entry.levelAssumed)
+    setFields(fieldsFromStats(entry.shown))
+    setItem(entry.item)
+    setResult(entry.result)
     setMessage(null)
     setScrollToken((token) => token + 1)
   }
@@ -248,6 +284,7 @@ export function QualityApp() {
         {preview ? <img src={preview} alt={text.pasteAlt} /> : <span>{text.paste}</span>}
       </label>
       {busy ? <LoadingOverlay label={busyLabel(busy, text)} /> : null}
+      <SavedLookups items={saved} text={text} onOpen={openSaved} />
       <form
         className="form"
         onSubmit={(event) => {

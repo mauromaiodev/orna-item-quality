@@ -40,7 +40,9 @@ export function ResultPanel(props: {
       </ul>
       {result.projection.length > 0 ? <Projection result={result} text={text} /> : null}
       <p className="note">
-        <a href={`https://playorna.com${item.url}`}>{text.codexLink}</a>
+        <a href={`https://playorna.com${item.url}`} target="_blank" rel="noopener noreferrer">
+          {text.codexLink}
+        </a>
       </p>
     </section>
   )
