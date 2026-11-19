@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { ItemSelect } from "@/components/item-select"
+import { LoadingOverlay } from "@/components/loading-overlay"
 import { ResultPanel } from "@/components/result-panel"
 import {
   emptyFields,
@@ -200,7 +201,7 @@ export function QualityApp() {
         </button>
       </div>
     </nav>
-    <main className="page">
+    <main className="page" aria-busy={busy !== null}>
       <header className="heading">
         <p className="eyebrow">Orna</p>
         <h1>{text.title}</h1>
@@ -225,7 +226,7 @@ export function QualityApp() {
         />
         {preview ? <img src={preview} alt={text.pasteAlt} /> : <span>{text.paste}</span>}
       </label>
-      {busy === "read" ? <p className="note">{text.reading}</p> : null}
+      {busy ? <LoadingOverlay label={busyLabel(busy, text)} /> : null}
       <form
         className="form"
         onSubmit={(event) => {
@@ -297,6 +298,7 @@ export function QualityApp() {
           ))}
         </div>
         <button className="button-cta" type="submit" disabled={busy !== null}>
+          {busy === "calc" ? <span className="spinner spinner-small" aria-hidden="true" /> : null}
           {busy === "calc" ? text.calculating : text.calculate}
         </button>
       </form>
@@ -307,6 +309,12 @@ export function QualityApp() {
     </main>
     </>
   )
+}
+
+function busyLabel(busy: "read" | "calc" | "list", text: Messages): string {
+  if (busy === "read") return text.reading
+  if (busy === "calc") return text.calculating
+  return text.loadingItems
 }
 
 function errorText(reason: unknown, text: Messages): string {
